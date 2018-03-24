@@ -7,6 +7,7 @@ type Treeish interface {
 	DetachChild(c Treeish) error
 	Children() []Treeish
 	Parent() Treeish
+	String() string
 }
 
 type TreeNode struct {
@@ -14,26 +15,35 @@ type TreeNode struct {
 	children []Treeish
 }
 
-func (node TreeNode) AttachChild(c Treeish) {
-	fmt.Println("Attaching")
-	if node.children == nil {
-		fmt.Println("make children")
-		node.children = make([]Treeish, 0)
+func StringChildren(n Treeish, indent string) string {
+	s := n.String()
+	chilluns := n.Children()
+	for _, c := range chilluns {
+		s += "\n" + indent + StringChildren(c, indent+"   ")
 	}
-	fmt.Println(node)
-	node.children = append(node.children, c)
-	fmt.Println(node)
+	return s
 }
 
-func (node TreeNode) DetachChild(c Treeish) error {
+func (node *TreeNode) AttachChild(c Treeish) {
+	if node.children == nil {
+		node.children = make([]Treeish, 0)
+	}
+	node.children = append(node.children, c)
+}
+
+func (node *TreeNode) DetachChild(c Treeish) error {
 	fmt.Println("Detaching")
 	return nil
 }
 
-func (node TreeNode) Children() []Treeish {
+func (node *TreeNode) Children() []Treeish {
 	return node.children
 }
 
-func (node TreeNode) Parent() Treeish {
+func (node *TreeNode) Parent() Treeish {
 	return node.parent
+}
+
+func (t TreeNode) String() string {
+	return "A plain treenode"
 }

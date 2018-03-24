@@ -7,19 +7,17 @@ import (
 )
 
 type Piece struct {
-	Name   string
-	Serial int
-	ID     string
+	Name     string
+	Serial   int
+	ID       string
+	ParentID string
 	tree.TreeNode
 }
 
-func (p Piece) String() string {
-	s := fmt.Sprintf("%s (%d)", p.Name, p.Serial)
-	chilluns := p.Children()
-	fmt.Println("chilluns:", chilluns)
-	for _, c := range chilluns {
-		fmt.Println(c.(Piece))
-		s += "\n   " + c.(Piece).String()
-	}
-	return s
+func (p *Piece) String() string {
+	return fmt.Sprintf("%s (%s,%d)", p.Name, p.ID, p.Serial)
+}
+
+func Pretty(p tree.Treeish) string {
+	return tree.StringChildren(p, "   ")
 }
