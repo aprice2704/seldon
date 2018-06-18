@@ -6,51 +6,65 @@ import (
 	"github.com/aprice2704/seldon/tree"
 )
 
+// WBS is a Work Breakdown Structure
+type WBS struct {
+	Tree     *tree.Tree
+	ID       string //
+	RootID   string
+	ID2Piece map[string]int
+	Pieces   Pieces
+}
+
+// Piece is a piece of the Work
 type Piece struct {
 	Name     string
 	Serial   int
 	ID       string
 	ParentID string
 	IsTask   bool
-	tree.TreeNode
 }
 
-func NewPiece(inWBS *WBS, Name string, Serial int, ID, ParentID string) *Piece {
-	p := new(Piece)
-	p.Name = Name
-	p.Serial = Serial
-	p.ID = ID
-	inWBS.id2piece[ID] = p
-	if ParentID != "" {
-		q := inWBS.ID2Piece(ParentID)
-		q.AttachChild(p)
-	}
-	p.ParentID = ParentID
-	return p
-}
+// Pieces is just a list of piece
+type Pieces []Piece
 
 func (p *Piece) String() string {
-	return fmt.Sprintf("%s (%s,%d)", p.Name, p.ID, p.Serial)
+	return fmt.Sprintf("%s (id:%s, ser:%d) ^%s", p.Name, p.ID, p.Serial, p.ParentID)
 }
 
-func Pretty(p tree.TreeAble) string {
-	return tree.StringChildren(p, "   ")
-}
-
-type WBS struct {
-	tree.Treeshaped
-	id2piece map[string]*Piece
-}
-
-func (w *WBS) ID2Piece(id string) *Piece {
-	return w.id2piece[id]
-}
-
-func NewWBS() {
+// NewWBS makes a new one
+func NewWBS(rootid string, pieces Pieces) *WBS {
 	w := new(WBS)
-	w.id2piece = map[string]*Piece{}
+	w.Pieces = append(w.Pieces, pieces...)
+	w.RootID = rootid
+	w.ID2Piece = make(map[string]int, 0)
+	for i, v := range pieces {
+		w.ID2Piece[v.ID] = i
+	}
+	rootn := w.ID2Piece[rootid]
+	w.Tree = tree.NewTree(len(pieces), rootn)
+	for i, v := range pieces {
+		if len(v.ParentID) > 0 {
+			//	fmt.Printf("Attaching %s/%d to %s/%d\n", pieces[i].ID, i, v.ParentID, w.ID2Piece[v.ParentID])
+			w.Tree.Attach(i, w.ID2Piece[v.ParentID])
+		}
+	}
+	return w
+}
+
+// PieceStringR does a recursive pretty print of a piece and its children
+func (w *WBS) PieceStringR(pieceno int, offset, indent string) string {
+	//fmt.Printf("WBS Piece #%d\n", pieceno)
+	s := offset + w.Pieces[pieceno].String() + "\n"
+	//fmt.Println("here1")
+	if w.Tree.NChildren(pieceno) > 0 {
+		for _, v := range w.Tree.Children(pieceno) {
+			//fmt.Printf("Child: %d", v)
+			s = s + w.PieceStringR(v, offset+indent, indent)
+		}
+	}
+	return s
 }
 
 func (w *WBS) String() string {
-	return Pretty(w.Trunk)
+	return w.PieceStringR(w.ID2Piece[w.RootID], "", "   ")
 }

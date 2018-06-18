@@ -7,7 +7,8 @@ import (
 )
 
 func TestWBS(t *testing.T) {
-	p := wbs.NewPiece("Testsomething", 42, "A0042", "")
+	mywbs := wbs.NewWBS()
+	p := wbs.NewPiece(mywbs, "Testsomething", 42, "A0042", "")
 	s := p.String()
 	shouldb := "Testsomething (A0042,42)"
 	if s != shouldb {
