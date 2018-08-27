@@ -9,7 +9,7 @@ import (
 // WBS is a Work Breakdown Structure
 type WBS struct {
 	Tree     *tree.Tree
-	ID       string //
+	ID       string
 	RootID   string
 	ID2Piece map[string]int
 	Pieces   Pieces
@@ -18,22 +18,28 @@ type WBS struct {
 // Piece is a piece of the Work
 type Piece struct {
 	Name     string
-	Serial   int
 	ID       string
 	ParentID string
 	IsTask   bool
+}
+
+type StormPiece struct { // with extra fields for storing in BoltDB via Storm
+	Piece
+	WBSID  string `storm:"index"`        // the WBS this is part of
+	Serial int    `storm:"id,increment"` // the primary key for storage, ID is string used for UI
 }
 
 // Pieces is just a list of piece
 type Pieces []Piece
 
 func (p *Piece) String() string {
-	return fmt.Sprintf("%s (id:%s, ser:%d) ^%s", p.Name, p.ID, p.Serial, p.ParentID)
+	return fmt.Sprintf("%s (id:%s) ^%s", p.Name, p.ID, p.ParentID)
 }
 
 // NewWBS makes a new one
-func NewWBS(rootid string, pieces Pieces) *WBS {
+func NewWBS(id string, rootid string, pieces Pieces) *WBS {
 	w := new(WBS)
+	w.ID = id
 	w.Pieces = append(w.Pieces, pieces...)
 	w.RootID = rootid
 	w.ID2Piece = make(map[string]int, 0)

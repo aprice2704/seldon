@@ -7,8 +7,12 @@ import (
 	"time"
 
 	"github.com/aprice2704/seldon/wbs"
+	"github.com/boltdb/bolt"
 	"github.com/gorilla/mux"
-	"github.com/timshannon/bolthold"
+)
+
+const (
+	project = "Moonbase"
 )
 
 func simpleLog(next http.Handler) http.Handler {
@@ -35,26 +39,31 @@ func main() {
 
 	// Some test data
 	pieces := []wbs.Piece{ // Just a temp structure to read in values
-		{Name: "Aldrin Base", Serial: 1000, ID: "A001", ParentID: ""},
-		{Name: "Eagle Landing Pad", Serial: 1100, ID: "A002", ParentID: "A001"},
-		{Name: "Foundation", Serial: 1200, ID: "A003", ParentID: "A002"},
-		{Name: "Perimeter berm", Serial: 1300, ID: "A004", ParentID: "A002"},
-		{Name: "Main Building", Serial: 1050, ID: "A005", ParentID: "A001"},
+		{Name: "Aldrin Base", ID: "A001", ParentID: ""},
+		{Name: "Eagle Landing Pad", ID: "A002", ParentID: "A001"},
+		{Name: "Foundation", ID: "A003", ParentID: "A002"},
+		{Name: "Perimeter berm", ID: "A004", ParentID: "A002"},
+		{Name: "Main Building", ID: "A005", ParentID: "A001"},
 	}
-	wbs := wbs.NewWBS("A001", pieces)
+	mywbs := wbs.NewWBS("Aldrin", "A001", pieces)
 
-	fmt.Printf("WBS:\n%s", wbs.String())
+	fmt.Printf("Storing WBS:\n%s", wbs.String())
 
 	fmt.Printf("Opening DB %s\n", localstore)
-	store, err := bolthold.Open(localstore, 0666, nil)
+	db, err := bolt.Open(localstore, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		panic(fmt.Sprintf("Cannot open mylocal db :( %v", err.Error()))
 	}
+	defer db.Close()
 
-	err = store.Upsert("MyAwesomeWBS", wbs.Pieces)
-	if err != nil {
-		panic(fmt.Sprintf("Couldn't upsert %s to %s, err %s", "MyAwesomeWBS", localstore, err.Error()))
-	}
+	err := db.Update(func(tx *bolt.Tx) error {
+		for _, p := range wbs.Pieces {
+			if err != nil {
+				panic(fmt.Sprintf("Couldn't save %s to %s, err %s", p, localstore, err.Error()))
+			}
+		}
+		return nil
+	})
 
 	Router := mux.NewRouter()
 	Router.HandleFunc("/", rootHandler)
