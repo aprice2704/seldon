@@ -23,17 +23,27 @@ type Piece struct {
 	IsTask   bool
 }
 
-type StormPiece struct { // with extra fields for storing in BoltDB via Storm
-	Piece
-	WBSID  string `storm:"index"`        // the WBS this is part of
-	Serial int    `storm:"id,increment"` // the primary key for storage, ID is string used for UI
-}
+// type StormPiece struct { // with extra fields for storing in BoltDB via Storm
+// 	Piece
+// 	WBSID  string `storm:"index"`        // the WBS this is part of
+// 	Serial int    `storm:"id,increment"` // the primary key for storage, ID is string used for UI
+// }
 
 // Pieces is just a list of piece
 type Pieces []Piece
 
 func (p *Piece) String() string {
 	return fmt.Sprintf("%s (id:%s) ^%s", p.Name, p.ID, p.ParentID)
+}
+
+// Prefix returns the key prefix for this type of object (for iterating)
+func (w WBS) Prefix() string {
+	return "WBS:"
+}
+
+// Key makes a key string for this object
+func (w WBS) Key() string {
+	return "WBS:" + w.ID
 }
 
 // NewWBS makes a new one
@@ -69,6 +79,16 @@ func (w *WBS) PieceStringR(pieceno int, offset, indent string) string {
 		}
 	}
 	return s
+}
+
+// Prefix returns the key prefix for this type of object (for iterating)
+func (p Piece) Prefix() string {
+	return "Piece:"
+}
+
+// Key makes a key string for this object
+func (p Piece) Key() string {
+	return "Piece:" + p.ID
 }
 
 func (w *WBS) String() string {

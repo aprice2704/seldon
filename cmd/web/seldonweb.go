@@ -2,17 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
-	"strconv"
 	"time"
 
+	"github.com/aprice2704/seldon/project"
+	"github.com/aprice2704/seldon/store"
 	"github.com/aprice2704/seldon/wbs"
-	"github.com/boltdb/bolt"
-	"github.com/gorilla/mux"
-)
-
-const (
-	project = "Moonbase"
 )
 
 func simpleLog(next http.Handler) http.Handler {
@@ -28,6 +24,7 @@ type simp struct {
 }
 
 const (
+	projname   = "Moonbase"
 	version    = "0.9.0"
 	localstore = "mylocal.seldon"
 	port       = 8080
@@ -47,35 +44,51 @@ func main() {
 	}
 	mywbs := wbs.NewWBS("Aldrin", "A001", pieces)
 
-	fmt.Printf("Storing WBS:\n%s", wbs.String())
+	fmt.Printf("Storing WBS:\n%s", mywbs.String())
 
-	fmt.Printf("Opening DB %s\n", localstore)
-	db, err := bolt.Open(localstore, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	mystore, err := store.NewBolt(localstore)
 	if err != nil {
-		panic(fmt.Sprintf("Cannot open mylocal db :( %v", err.Error()))
+		log.Fatalf("Trying to open %s, %s", localstore, err.Error())
 	}
-	defer db.Close()
+	defer mystore.Close()
 
-	err := db.Update(func(tx *bolt.Tx) error {
-		for _, p := range wbs.Pieces {
-			if err != nil {
-				panic(fmt.Sprintf("Couldn't save %s to %s, err %s", p, localstore, err.Error()))
-			}
-		}
-		return nil
-	})
+	p := project.NewProject(projname)
+	err := mystore.SaveProject(p)
 
-	Router := mux.NewRouter()
-	Router.HandleFunc("/", rootHandler)
+	// var mygob bytes.Buffer
+	// enc := gob.NewEncoder(&mygob)
+	// //dec := gob.NewDecoder(&buf)
 
-	web := &http.Server{
-		Handler:      Router,
-		Addr:         ":" + strconv.Itoa(port),
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-	}
-	fmt.Printf("Listening on %s\n", web.Addr)
-	web.ListenAndServe()
+	// err := db.Update(func(tx *bolt.Tx) error {
+	// 	for _, p := range mywbs.Pieces {
+	// 		b, err := tx.CreateBucketIfNotExists([]byte(project))
+	// 		if err != nil {
+	// 			return fmt.Errorf("Couldn't create bucket: %s", err)
+	// 		}
+	// 		k := []byte(p.Key())
+	// 		err = enc.Encode(p)
+	// 		if err != nil {
+	// 			return fmt.Errorf("Couldn't gob encode %s, err %s", &p, err.Error())
+	// 		}
+	// 		err = b.Put(k, mygob.Bytes())
+	// 		if err != nil {
+	// 			return fmt.Errorf("Couldn't save %s to %s, err %s", &p, localstore, err.Error())
+	// 		}
+	// 	}
+	// 	return nil
+	// })
+
+	// Router := mux.NewRouter()
+	// Router.HandleFunc("/", rootHandler)
+	//
+	// web := &http.Server{
+	// 	Handler:      Router,
+	// 	Addr:         ":" + strconv.Itoa(port),
+	// 	WriteTimeout: 15 * time.Second,
+	// 	ReadTimeout:  15 * time.Second,
+	// }
+	// fmt.Printf("Listening on %s\n", web.Addr)
+	// web.ListenAndServe()
 
 }
 
