@@ -25,12 +25,12 @@ func (p Project) Get(st store.Storage, key string) (err error) {
 }
 
 // Put for Storable
-func (p Project) Put(st store.Storage) (value Storable, err error) {
+// func (p Project) Put(st store.Storage) (value Storable, err error) {
 
-}
+// }
 
-func NewProject(n string) {
-	return &Project{Name: n}
+func NewProject(n string) Project {
+	return Project{Name: n}
 }
 
 // // SaveProject stores an entire project in a BoltDB

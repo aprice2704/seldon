@@ -1,14 +1,12 @@
 package task
 
-import wbs
+import "time"
 
+// type Schedulable interface {
 
-type Schedulable interface {
+// }
 
-}
-
-
-type TaskDates {
+type TaskDates struct {
 	ES time.Time
 	LS time.Time
 	EF time.Time

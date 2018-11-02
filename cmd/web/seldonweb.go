@@ -53,7 +53,7 @@ func main() {
 	defer mystore.Close()
 
 	p := project.NewProject(projname)
-	err := mystore.SaveProject(p)
+	//err := mystore.SaveProject(p)
 
 	// var mygob bytes.Buffer
 	// enc := gob.NewEncoder(&mygob)
